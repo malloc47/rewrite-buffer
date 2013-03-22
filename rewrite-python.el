@@ -37,11 +37,11 @@
  (rewrite-python-substitutions 'font-lock-add-keywords)
  (font-lock-fontify-buffer))
 
-(defun rewrite-python-deactivate () 
- (rewrite-python-nosubstitutions)
+(defun rewrite-python-deactivate ()
  (ad-deactivate 'delete-char)
  (ad-deactivate 'delete-backward-char)
- (rewrite-python-substitutions 'font-lock-remove-keywords))
+ (rewrite-python-substitutions 'font-lock-remove-keywords)
+ (facemenu-remove-all (point-min) (point-max)))
 
 ;; compose region version
 
@@ -56,20 +56,35 @@
  (funcall 
   f
   nil
-  `(("\\(^\\|[a-zA-Z0-9]\\)\\(_to_\\)"
+  `(("\\(^\\|[[:alnum:]]\\)\\(_to_\\)"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "→")
+               nil)))
+    ("\\(\\.astype\\)[^[:alnum:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 1)
+                (match-end 1) 'display "→")
+               nil)))
+    ("\\(^\\|[^a-zA-Z0-9]\\)\\(\\array\\)[^[:alnum:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 2)
+                (match-end 2) 'display "⩩")
                nil)))
     ("\\(^\\|[[:space:]]\\)\\(in\\)[[:space:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "∈")
                nil)))
-    ("\\(^\\|[[:space:]]\\)\\(for\\)[[:space:]]"
+    ("\\(^\\|[^[:alnum:]]\\)\\(for\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "∀")
+               nil)))
+    ("\\(^\\|[^[:alnum:]]\\)\\(if\\)[^[:alnum:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 2) 
+                (match-end 2) 'display "∃")
                nil)))
     ("\\(^\\|[[:space:]]\\|\(\\)\\(not\\)[[:space:]]"
      (0 (progn (put-text-property 
@@ -86,22 +101,27 @@
                 (match-beginning 2) 
                 (match-end 2) 'display "∧")
                nil)))
-    ("\\(^\\|[^a-zA-Z0-9]\\)\\(True\\)[^a-zA-Z0-9]"
+    ("\\(^\\|[^[:alnum:]]\\)\\(True\\)[^a-zA-Z0-9]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "⊤")
                nil)))
-    ("\\(^\\|[^a-zA-Z0-9]\\)\\(False\\)[^a-zA-Z0-9]"
+    ("\\(^\\|[^a-zA-Z0-9]\\)\\(False\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "⊥")
                nil)))
-    ("\\(^\\|[^a-zA-Z0-9]\\)\\(None\\)[^a-zA-Z0-9]"
+    ("\\(^\\|[^a-zA-Z0-9]\\)\\(None\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "∅")
                nil)))
-    ("\\(^\\|[^a-zA-Z0-9]\\)\\(import\\)[^a-zA-Z0-9]"
+    ("\\(^\\|[^a-zA-Z0-9]\\)\\(self\\)[^[:alnum:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 2) 
+                (match-end 2) 'display "◯")
+               nil)))
+    ("\\(^\\|[^a-zA-Z0-9]\\)\\(import\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "≺") ;just silly at this point
@@ -109,9 +129,24 @@
     (")\\(:\\)$"
      (0 (progn (put-text-property 
                 (match-beginning 1) 
-                (match-end 1) 'display "⇒")
+                (match-end 1) 'display "▶")
                nil)))
-    ("\\([a-zA-Z0-9]\\|[[:space:]]\\)\\(==\\)\\([a-zA-Z0-9]\\|[[:space:]]\\)"
+    ("\\(\\\\\\)$"
+     (0 (progn (put-text-property 
+                (match-beginning 1) 
+                (match-end 1) 'display "…")
+               nil)))
+    ("^[[:space:]]*\\(def\\)[[:space:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 1) 
+                (match-end 1) 'display "§")
+               nil)))
+    ("^[[:space:]]*\\(return\\)\\([^[:alnum:]]\\|$\\)"
+     (0 (progn (put-text-property 
+                (match-beginning 1) 
+                (match-end 1) 'display "◀")
+               nil)))
+    ("\\([[:alnum:]]\\|[[:space:]]\\)\\(==\\)\\([[:alnum:]]\\|[[:space:]]\\)"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "≡")
