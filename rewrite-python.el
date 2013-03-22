@@ -33,13 +33,15 @@
    ad-do-it)))
 
 (defun rewrite-python-activate () 
- (rewrite-pyton-advice)
+ ;; (rewrite-pyton-advice)
  (rewrite-python-substitutions 'font-lock-add-keywords)
+ (add-hook 'before-change-functions 'rewrite-python-before-change nil 'local)
  (font-lock-fontify-buffer))
 
 (defun rewrite-python-deactivate ()
- (ad-deactivate 'delete-char)
- (ad-deactivate 'delete-backward-char)
+ ;; (ad-deactivate 'delete-char)
+ ;; (ad-deactivate 'delete-backward-char)
+ (remove-hook 'before-change-functions 'rewrite-python-before-change 'local)
  (rewrite-python-substitutions 'font-lock-remove-keywords)
  (facemenu-remove-all (point-min) (point-max)))
 
@@ -52,7 +54,30 @@
 ;;                                           ,?-)
 ;; 				      nil)))))
 
+(defun rewrite-python-before-change (begin end)
+ "unset display on characters before and after changed region
+  TODO: currently hacked so that it just clears the current line instead of
+  intelligently finding the next next point"
+ (when (text-property-not-all begin end 'display nil)
+  (let* ((l (list 
+             begin 
+             end 
+             (line-beginning-position)
+             (line-end-position)
+             ;; (previous-property-change begin)
+             ;; (previous-property-change end)
+             ;; (next-property-change begin)
+             ;; (next-property-change end)
+             ))
+         (b (reduce 'min l))
+         (e (reduce 'max l)))
+   (message (concat "begin: " (number-to-string b) " end: " (number-to-string e)))
+   (remove-text-properties b e '(display nil)))
+  )
+ )
+
 (defun rewrite-python-substitutions (f)
+ "TODO: borrow pretty-mode.el's pretty-keywords app"
  (funcall 
   f
   nil
@@ -65,6 +90,11 @@
      (0 (progn (put-text-property 
                 (match-beginning 1)
                 (match-end 1) 'display "→")
+               nil)))
+    ("[^[:alnum:]]\\([[:alnum:]]*\\)\\(\\.sum\\)[^[:alnum:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 1)
+                (match-end 2) 'display "Σ")
                nil)))
     ("\\(^\\|[^a-zA-Z0-9]\\)\\(\\array\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
@@ -150,7 +180,23 @@
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display "≡")
-               nil)))))
+               nil)))
+    ;; I was rather insane to even try this
+    ;; ("\\(^\\|[^[:alnum:]]\\n\\)\\(abs(\\)\\([^\\\n)]*\\))"
+    ;;  ;; "\\(^\\|[^[:alnum:]]\\)\\(abs(\\)\\([^)]*\\)\\()\\)"
+    ;;  (0 (progn 
+    ;;      (let ((closing (scan-lists (+ (match-beginning 2) 3) 1 0)))
+    ;;       (when (< (or closing (line-end-position)) (line-end-position))
+    ;;        (put-text-property 
+    ;;         (match-beginning 2)
+    ;;         (or closing (buffer-end arg))
+    ;;         'display 
+    ;;         (concat "|" (buffer-substring 
+    ;;                      (match-end 2) 
+    ;;                      (- (or closing (buffer-end arg)) 1)
+    ;;                      ) "|"))
+    ;;        ))nil)))
+))
  ;; * as ×
  ;; ^ as ⊕
  ;; / as ÷
