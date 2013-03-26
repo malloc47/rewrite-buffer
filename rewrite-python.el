@@ -7,11 +7,14 @@
  "Rewrite python display output"
  nil
  " rp"
+ ;; '(("_" . (lambda () (interactive) (message "test") (insert "-")))
+ ;;   ("-" . (lambda () (interactive) (insert "_"))))
  nil
  :group 'rewrite
  (if rewrite-python-mode 
    (rewrite-python-activate)
-  (rewrite-python-deactivate)))
+  (rewrite-python-deactivate))
+ )
 
 (defun trim-string (string)
 (replace-regexp-in-string "\\`[ \t\n]*" "" (replace-regexp-in-string "[ \t\n]*\\'" "" string)))
@@ -35,7 +38,9 @@
  (set (make-local-variable 'font-lock-extra-managed-props) '(display))
  (set (make-local-variable 'font-lock-multiline) t)
  (add-hook 'font-lock-extend-region-functions 'rewrite-python-font-lock-extend-region nil 'local)
- (font-lock-fontify-buffer))
+ (font-lock-fontify-buffer)
+ (define-key key-translation-map (kbd "_") (kbd "-"))
+ (define-key key-translation-map (kbd "-") (kbd "_")))
 
 (defun rewrite-python-deactivate ()
  (rewrite-python-substitutions 'font-lock-remove-keywords)
@@ -84,7 +89,12 @@
  (funcall 
   f
   nil
-  `(("\\(^\\|[[:alnum:]]\\)\\(_to_\\)"
+  `(("[[:alnum:]]\\(_\\)[[:alnum:]]"    ; my all time most hated wart in pyton
+     (0 (progn (put-text-property 
+                (match-beginning 1) 
+                (match-end 1) 'display (concat "-"))
+               nil)))
+    ("\\(^\\|[[:alnum:]]\\)\\(_to_\\)"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display (concat "→"))
@@ -99,9 +109,9 @@
                 (match-beginning 1)
                 (match-end 2) 'display (concat "Σ"))
                nil)))
-    ("\\(^\\|[^a-zA-Z0-9]\\)\\(\\array\\)[^[:alnum:]]"
+    ("[^[:alnum:]]\\([[:alnum:]]*\\)\\(\\.array\\)[^[:alnum:]]" ;"\\(^\\|[^a-zA-Z0-9]\\)\\(\\array\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
-                (match-beginning 2)
+                (match-beginning 1)
                 (match-end 2) 'display (concat "⩩"))
                nil)))
     ("[^-!<>=+*/^]\\(=\\)[^-!=<>+*/^]"
@@ -209,28 +219,34 @@
                 (match-beginning 1) 
                 (match-end 1) 'display (concat "◀"))
                nil)))
-    ("[[:alnum:]]\\(_\\)[[:alnum:]]"    ; my all time most hated wart in pyton
+    ("\\(^\\|[^[:alnum:]]\\)\\(_\\)[[:alnum:]]*\\(_\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
-                (match-beginning 1) 
-                (match-end 1) 'display (concat "-"))
-               nil)))
-    ("[^[:alnum:]]\\(_\\)[[:alnum:]]*\\(_\\)[^[:alnum:]]"
-     (0 (progn (put-text-property 
-                (match-beginning 1) 
-                (match-end 1) 'display (concat "⟨"))
-               (put-text-property 
                 (match-beginning 2) 
-                (match-end 2) 'display (concat "⟩"))
-               nil)))
-    ("[^[:alnum:]]\\(__\\)[[:alnum:]]*\\(__\\)[^[:alnum:]]"
-     (0 (progn (put-text-property 
-                (match-beginning 1) 
-                (match-end 1) 'display (concat "⟪"))
+                (match-end 2) 'display (concat "⟨"))
                (put-text-property 
-                (match-beginning 2) 
-                (match-end 2) 'display (concat "⟫"))
+                (match-beginning 3) 
+                (match-end 3) 'display (concat "⟩"))
                nil)))
-    (,(rewrite-python-function-match "abs[[:space:]]*(\\|fabs[[:space:]]*(\\|len[[:space:]]*(") ;abs-match
+    ("\\(^\\|[^[:alnum:]]\\)\\(__\\)[[:alnum:]]*\\(__\\)[^[:alnum:]]"
+     (0 (progn (put-text-property 
+                (match-beginning 2) 
+                (match-end 2) 'display (concat "⟪"))
+               (put-text-property 
+                (match-beginning 3) 
+                (match-end 3) 'display (concat "⟫"))
+               nil)))
+    ("\\(^\\|[^[:alnum:]]\\)\\(range(\\|xrange(\\)\\([^(),\n]*\\)\\(,\\)\\([^(),\n]*\\)\\()\\)"
+     (0 (progn (put-text-property 
+                (match-beginning 2) 
+                (match-end 2) 'display (concat "["))
+               (put-text-property 
+                (match-beginning 4) 
+                (match-end 4) 'display (concat ".."))
+               (put-text-property 
+                (match-beginning 6) 
+                (match-end 6) 'display (concat "]"))
+               nil)))
+    (,(rewrite-python-function-match "abs[[:space:]]*(\\|fabs[[:space:]]*(\\|len[[:space:]]*(")
      (0 (progn 
          (put-text-property 
           (match-beginning 1) 
@@ -266,7 +282,7 @@
           (match-beginning 0) 
           (match-end 0) 'font-lock-multiline t)
          nil)))
-))
+    ))
  ;; * as ×
  ;; ^ as ⊕
  ;; / as ÷
