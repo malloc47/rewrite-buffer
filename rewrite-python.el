@@ -7,8 +7,8 @@
  "Rewrite python display output"
  nil
  " rp"
- ;; '(("_" . (lambda () (interactive) (message "test") (insert "-")))
- ;;   ("-" . (lambda () (interactive) (insert "_"))))
+ '(("_" . (lambda () (interactive) (insert "-")))
+   ("-" . (lambda () (interactive) (insert "_"))))
  nil
  :group 'rewrite
  (if rewrite-python-mode 
@@ -39,8 +39,9 @@
  (set (make-local-variable 'font-lock-multiline) t)
  (add-hook 'font-lock-extend-region-functions 'rewrite-python-font-lock-extend-region nil 'local)
  (font-lock-fontify-buffer)
- (define-key key-translation-map (kbd "_") (kbd "-"))
- (define-key key-translation-map (kbd "-") (kbd "_")))
+ ;; (define-key key-translation-map (kbd "_") (kbd "-"))
+ ;; (define-key key-translation-map (kbd "-") (kbd "_"))
+ )
 
 (defun rewrite-python-deactivate ()
  (rewrite-python-substitutions 'font-lock-remove-keywords)
@@ -219,7 +220,7 @@
                 (match-beginning 1) 
                 (match-end 1) 'display (concat "◀"))
                nil)))
-    ("\\(^\\|[^[:alnum:]]\\)\\(_\\)[[:alnum:]]*\\(_\\)[^[:alnum:]]"
+    ("\\(^\\|[^[:alnum:]]\\)\\(_\\)[[:alnum:]]+\\(_\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display (concat "⟨"))
@@ -227,7 +228,7 @@
                 (match-beginning 3) 
                 (match-end 3) 'display (concat "⟩"))
                nil)))
-    ("\\(^\\|[^[:alnum:]]\\)\\(__\\)[[:alnum:]]*\\(__\\)[^[:alnum:]]"
+    ("\\(^\\|[^[:alnum:]]\\)\\(__\\)[[:alnum:]]+\\(__\\)[^[:alnum:]]"
      (0 (progn (put-text-property 
                 (match-beginning 2) 
                 (match-end 2) 'display (concat "⟪"))
